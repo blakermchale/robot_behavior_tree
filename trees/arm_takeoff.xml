@@ -1,0 +1,7 @@
+<root main_tree_to_execute="MainTree">
+    <BehaviorTree ID="MainTree">
+        <SequenceStar name="RecoveryActions">
+            <ArmTakeoff altitude="1.0"/>
+        </SequenceStar>
+    </BehaviorTree>
+</root>
