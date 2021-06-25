@@ -3,7 +3,7 @@
 
 #include <string>
 
-#include "robot_control_interfaces/action/follow_path.hpp"
+#include "robot_control_interfaces/action/follow_waypoints.hpp"
 #include "nav2_behavior_tree/bt_action_node.hpp"
 
 namespace robot_behavior_tree

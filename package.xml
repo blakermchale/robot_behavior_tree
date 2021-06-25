@@ -13,11 +13,13 @@
   <build_depend>nav2_behavior_tree</build_depend>
   <build_depend>nav2_msgs</build_depend>
   <build_depend>robot_control_interfaces</build_depend>
+  <build_depend>nav2_bt_navigator</build_depend>
 
   <exec_depend>behaviortree_cpp_v3</exec_depend>
   <exec_depend>nav2_behavior_tree</exec_depend>
   <exec_depend>nav2_msgs</exec_depend>
-  <exec_depend>robot_control_interfaces</exec_depend>
+  <exec_depend>robot_control_interfaces</exec_depend>nav2_bt_navigator
+  <exec_depend>nav2_bt_navigator</exec_depend>
 
   <test_depend>ament_lint_auto</test_depend>
   <test_depend>ament_lint_common</test_depend>
