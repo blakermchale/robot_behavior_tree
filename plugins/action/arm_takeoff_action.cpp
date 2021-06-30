@@ -19,11 +19,6 @@ void ArmTakeoffAction::on_tick()
   getInput("altitude", goal_.altitude);
 }
 
-// void ArmTakeoffAction::on_wait_for_result()
-// {
-  
-// }
-
 }  // namespace robot_behavior_tree
 
 #include "behaviortree_cpp_v3/bt_factory.h"

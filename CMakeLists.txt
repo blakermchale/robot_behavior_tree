@@ -61,6 +61,10 @@ ament_target_dependencies(${runner_lib}
 # Plugins
 add_library(robot_arm_takeoff_action_bt_node SHARED plugins/action/arm_takeoff_action.cpp)
 list(APPEND plugin_libs robot_arm_takeoff_action_bt_node)
+add_library(robot_land_action_bt_node SHARED plugins/action/land_action.cpp)
+list(APPEND plugin_libs robot_land_action_bt_node)
+add_library(robot_go_waypoint_action_bt_node SHARED plugins/action/go_waypoint_action.cpp)
+list(APPEND plugin_libs robot_go_waypoint_action_bt_node)
 
 foreach(bt_plugin ${plugin_libs})
   ament_target_dependencies(${bt_plugin} ${dependencies})

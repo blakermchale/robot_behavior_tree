@@ -1,27 +1,27 @@
-#ifndef ROBOT_BEHAVIOR_TREE__PLUGINS__ACTION__ARM_TAKEOFF_ACTION_HPP_
-#define ROBOT_BEHAVIOR_TREE__PLUGINS__ACTION__ARM_TAKEOFF_ACTION_HPP_
+#ifndef ROBOT_BEHAVIOR_TREE__PLUGINS__ACTION__LAND_ACTION_HPP_
+#define ROBOT_BEHAVIOR_TREE__PLUGINS__ACTION__LAND_ACTION_HPP_
 
 #include <string>
 
-#include "robot_control_interfaces/action/arm_takeoff.hpp"
+#include "robot_control_interfaces/action/land.hpp"
 #include "nav2_behavior_tree/bt_action_node.hpp"
 
 namespace robot_behavior_tree
 {
 
 /**
- * @brief A nav2_behavior_tree::BtActionNode class that wraps robot_control_interfaces::action::ArmTakeoff
+ * @brief A nav2_behavior_tree::BtActionNode class that wraps robot_control_interfaces::action::Land
  */
-class ArmTakeoffAction : public nav2_behavior_tree::BtActionNode<robot_control_interfaces::action::ArmTakeoff>
+class LandAction : public nav2_behavior_tree::BtActionNode<robot_control_interfaces::action::Land>
 {
 public:
   /**
-   * @brief A constructor for robot_behavior_tree::ArmTakeoffAction
+   * @brief A constructor for robot_behavior_tree::LandAction
    * @param xml_tag_name Name for the XML tag for this node
    * @param action_name Action name this node creates a client for
    * @param conf BT node configuration
    */
-  ArmTakeoffAction(
+  LandAction(
     const std::string & xml_tag_name,
     const std::string & action_name,
     const BT::NodeConfiguration & conf);
@@ -37,13 +37,10 @@ public:
    */
   static BT::PortsList providedPorts()
   {
-    return providedBasicPorts(
-      {
-        BT::InputPort<double>("altitude", 2.0, "Takeoff altitude"),
-      });
+    return providedBasicPorts({});
   }
 };
 
 }  // namespace robot_behavior_tree
 
-#endif  // ROBOT_BEHAVIOR_TREE__PLUGINS__ACTION__ARM_TAKEOFF_ACTION_HPP_
+#endif  // ROBOT_BEHAVIOR_TREE__PLUGINS__ACTION__LAND_ACTION_HPP_

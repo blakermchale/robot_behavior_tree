@@ -24,7 +24,9 @@ BtRunner::BtRunner()
   RCLCPP_INFO(get_logger(), "Creating");
 
   const std::vector<std::string> plugin_libs = {
-    "robot_arm_takeoff_action_bt_node"
+    "robot_arm_takeoff_action_bt_node",
+    "robot_land_action_bt_node",
+    "robot_go_waypoint_action_bt_node",
   };
 
   // Declare this node's parameters
@@ -82,7 +84,8 @@ BtRunner::on_configure(const rclcpp_lifecycle::State & /*state*/)
   // Put items on the blackboard
   blackboard_->set<rclcpp::Node::SharedPtr>("node", client_node_);  // NOLINT
   blackboard_->set<std::shared_ptr<tf2_ros::Buffer>>("tf_buffer", tf_);  // NOLINT
-  blackboard_->set<std::chrono::milliseconds>("server_timeout", std::chrono::milliseconds(10));  // NOLINT
+  // TODO: what should be the default server_timeout, was originally 10
+  blackboard_->set<std::chrono::milliseconds>("server_timeout", std::chrono::milliseconds(1000000000));  // NOLINT
 
   // Get the BT filename to use from the node parameter
   get_parameter("default_bt_xml_filename", default_bt_xml_filename_);
@@ -191,8 +194,16 @@ BtRunner::on_shutdown(const rclcpp_lifecycle::State & /*state*/)
 }
 
 void
+BtRunner::initializeRun()
+{
+  // Reset state for new action feedback
+  start_time_ = now();
+}
+
+void
 BtRunner::run()
 {
+  initializeRun();
 
   auto is_canceling = [this]() {
       if (action_server_ == nullptr) {
@@ -215,7 +226,7 @@ BtRunner::run()
 
   if (!loadBehaviorTree(bt_xml_filename)) {
     RCLCPP_ERROR(
-      get_logger(), "BT file not found: %s. Navigation canceled.",
+      get_logger(), "BT file not found: %s. Runner canceled.",
       bt_xml_filename.c_str());
     action_server_->terminate_current();
     return;
@@ -228,6 +239,7 @@ BtRunner::run()
       if (action_server_->is_preempt_requested()) {
         RCLCPP_INFO(get_logger(), "Received goal preemption request");
         action_server_->accept_pending_goal();
+        initializeRun();
       }
       topic_logger.flush();
 
@@ -243,17 +255,17 @@ BtRunner::run()
 
   switch (rc) {
     case nav2_behavior_tree::BtStatus::SUCCEEDED:
-      RCLCPP_INFO(get_logger(), "Navigation succeeded");
+      RCLCPP_INFO(get_logger(), "Runner succeeded");
       action_server_->succeeded_current();
       break;
 
     case nav2_behavior_tree::BtStatus::FAILED:
-      RCLCPP_ERROR(get_logger(), "Navigation failed");
+      RCLCPP_ERROR(get_logger(), "Runner failed");
       action_server_->terminate_current();
       break;
 
     case nav2_behavior_tree::BtStatus::CANCELED:
-      RCLCPP_INFO(get_logger(), "Navigation canceled");
+      RCLCPP_INFO(get_logger(), "Runner canceled");
       action_server_->terminate_all();
       break;
   }
