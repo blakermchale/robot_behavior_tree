@@ -1,0 +1,16 @@
+<root>
+    <TreeNodesModel>
+        <Action ID="ArmTakeoff">
+            <input_port name="altitude" default="2.0">Takeoff altitude</input_port>
+        </Action>
+        <Action ID="GoWaypoint">
+            <input_port name="frame" default="1">Reference frame</input_port>
+            <input_port name="heading" default="0.0">heading rad/s</input_port>
+            <input_port name="x" default="0.0">x position m</input_port>
+            <input_port name="y" default="0.0">y position m</input_port>
+            <input_port name="z" default="0.0">z position m</input_port>
+        </Action>
+        <Action ID="Land"/>
+    </TreeNodesModel>
+</root>
+
