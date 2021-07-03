@@ -38,6 +38,7 @@ LAUNCH_ARGS = [
     {"name": "enable_groot_monitoring",   "default": "true",      "description": "Enable groot monitoring."},
     {"name": "groot_zmq_publisher_port",  "default": "1666",      "description": "Groot publisher port."},
     {"name": "groot_zmq_server_port",     "default": "1667",      "description": "Groot publisher port."},
+    {"name": "namespace",                 "default": "",          "description": "Namespace for ROS.",}
 ]
 def get_launch_arguments():
     return [DeclareLaunchArgument(param['name'], default_value=param['default'], description=param['description'], choices=param.get("choices")) for param in LAUNCH_ARGS]
@@ -50,8 +51,8 @@ def set_configurable_parameters():
 def launch_setup(context, *args, **kwargs):
     """Allows declaration of launch arguments within the ROS2 context
     """
-    namespace = "drone_0"  # TODO: use arg for namespace
-    lifecycle_nodes = [f"/{namespace}/bt_runner"]
+    namespace = LaunchConfiguration("namespace").perform(context)
+    lifecycle_nodes = ["bt_runner"]
     ld = [
         Node(
             package='robot_behavior_tree', executable="bt_runner",
@@ -71,8 +72,14 @@ def launch_setup(context, *args, **kwargs):
             executable='lifecycle_manager',
             name='lifecycle_manager_navigation',
             output='screen',
+            namespace=namespace,
             parameters=[{'use_sim_time': False},
                         {'autostart': True},
                         {'node_names': lifecycle_nodes}]),
     ]
     return ld
+
+
+def combine_names(l: list, sep: str):
+    l = list(filter(None, l))  # Remove empty strings
+    return sep.join(l)

@@ -153,8 +153,6 @@ public:
         ok = false;
         }
 
-        BT::Blackboard::Ptr blackboard = bt_action_server_->getBlackboard();
-
         return configure(parent_node) && ok;
     }
 
