@@ -51,6 +51,9 @@ def set_configurable_parameters():
 def launch_setup(context, *args, **kwargs):
     """Allows declaration of launch arguments within the ROS2 context
     """
+    # Change to trees folder for including subtrees since behavior trees xml parsing uses cwd
+    os.chdir(os.path.dirname(DEFAULT_BT))
+
     namespace = LaunchConfiguration("namespace").perform(context)
     lifecycle_nodes = ["bt_runner"]
     ld = [
