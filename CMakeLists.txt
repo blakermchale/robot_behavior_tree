@@ -38,6 +38,7 @@ add_executable(${runner_exe}
 set(runner_lib ${runner_exe}_core)
 add_library(${runner_lib} SHARED
   src/bt_runner.cpp
+  src/runner.cpp
 )
 
 set(dependencies

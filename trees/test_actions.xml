@@ -1,11 +1,9 @@
 <root main_tree_to_execute="MainTree">
+    <include path="square.xml"/>
     <BehaviorTree ID="MainTree">
         <SequenceStar name="test">
-            <ArmTakeoff altitude="3.0"/>
-            <GoWaypoint frame="1" x="4.0" y="0.0" z="-3.0" heading="0.0"/>
-            <GoWaypoint frame="1" x="4.0" y="4.0" z="-3.0" heading="0.0"/>
-            <GoWaypoint frame="1" x="0.0" y="4.0" z="-3.0" heading="0.0"/>
-            <GoWaypoint frame="1" x="0.0" y="0.0" z="-3.0" heading="0.0"/>
+            <ArmTakeoff altitude="2.0"/>
+            <SubTree ID="Square" __shared_blackboard="true"/>
             <Land/>
         </SequenceStar>
     </BehaviorTree>

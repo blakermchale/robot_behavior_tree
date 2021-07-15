@@ -1,3 +1,17 @@
+// Copyright (c) 2018 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 #ifndef ROBOT_BEHAVIOR_TREE__BT_RUNNER_HPP_
 #define ROBOT_BEHAVIOR_TREE__BT_RUNNER_HPP_
 
@@ -5,20 +19,17 @@
 #include <string>
 #include <vector>
 
-#include "nav2_behavior_tree/behavior_tree_engine.hpp"
 #include "nav2_util/lifecycle_node.hpp"
-#include "robot_control_interfaces/action/run_bt.hpp"
-#include "nav2_util/simple_action_server.hpp"
 #include "rclcpp_action/rclcpp_action.hpp"
-#include "tf2_ros/transform_listener.h"
 #include "tf2_ros/create_timer_ros.h"
+#include "robot_behavior_tree/runner.hpp"
 
 namespace robot_behavior_tree
 {
+
 /**
  * @class robot_behavior_tree::BtRunner
- * @brief An action server that uses behavior tree for navigating a robot to its
- * goal position.
+ * @brief An action server that runs a behavior tree.
  */
 class BtRunner : public nav2_util::LifecycleNode
 {
@@ -36,8 +47,8 @@ protected:
   /**
    * @brief Configures member variables
    *
-   * Initializes action server for "RunBT"; subscription to
-   * "goal_sub"; and builds behavior tree from xml file.
+   * Initializes action server for "Runner"; 
+   * and builds behavior tree from xml file.
    * @param state Reference to LifeCycle node state
    * @return SUCCESS or FAILURE
    */
@@ -67,58 +78,9 @@ protected:
    */
   nav2_util::CallbackReturn on_shutdown(const rclcpp_lifecycle::State & state) override;
 
-  using Action = robot_control_interfaces::action::RunBT;
-
-  using ActionServer = nav2_util::SimpleActionServer<Action>;
-
-  // Our action server implements the NavigateToPose action
-  std::unique_ptr<ActionServer> action_server_;
-
-  /**
-   * @brief Action server callbacks
-   */
-  void run();
-
-  /**
-   * @brief Initializes variables for run
-   */
-  void initializeRun();
-
-  /**
-   * @brief Replace current BT with another one
-   * @param bt_xml_filename The file containing the new BT
-   * @return true if the resulting BT correspond to the one in bt_xml_filename. false
-   * if something went wrong, and previous BT is mantained
-   */
-  bool loadBehaviorTree(const std::string & bt_id);
-
-  BT::Tree tree_;
-
-  // The blackboard shared by all of the nodes in the tree
-  BT::Blackboard::Ptr blackboard_;
-
-  // The XML fiñe that cointains the Behavior Tree to create
-  std::string current_bt_xml_filename_;
-  std::string default_bt_xml_filename_;
-
-  // The wrapper class for the BT functionality
-  std::unique_ptr<nav2_behavior_tree::BehaviorTreeEngine> bt_;
-
-  // Libraries to pull plugins (BT Nodes) from
-  std::vector<std::string> plugin_lib_names_;
-
-  // A client that we'll use to send a command message to our own task server
-  rclcpp_action::Client<Action>::SharedPtr self_client_;
-
-  // A regular, non-spinning ROS node that we can use for calls to the action client
-  rclcpp::Node::SharedPtr client_node_;
-
-  // Spinning transform that can be used by the BT nodes
-  std::shared_ptr<tf2_ros::Buffer> tf_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
-
-  // Metrics for feedback
-  rclcpp::Time start_time_;
+  // To handle all the BT related execution
+  std::unique_ptr<robot_behavior_tree::Runner> bt_runner_;
+  robot_behavior_tree::RunnerMuxer plugin_muxer_;
 };
 
 }  // namespace robot_behavior_tree
