@@ -26,8 +26,8 @@
 namespace robot_behavior_tree
 {
 
-BtRunner::BtRunner()
-: nav2_util::LifecycleNode("bt_runner", "", false)
+BtRunner::BtRunner(const rclcpp::NodeOptions & options)
+: nav2_util::LifecycleNode("bt_runner", "", options)
 {
   RCLCPP_INFO(get_logger(), "Creating");
 

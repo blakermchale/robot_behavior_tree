@@ -37,7 +37,7 @@ public:
   /**
    * @brief A constructor for robot_behavior_tree::BtRunner class
    */
-  BtRunner();
+  BtRunner(const rclcpp::NodeOptions & options = rclcpp::NodeOptions());
   /**
    * @brief A destructor for robot_behavior_tree::BtRunner class
    */

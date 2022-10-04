@@ -157,7 +157,7 @@ public:
     }
 
     /**
-     * @brief Actiation of the runner's backend BT and actions
+     * @brief Activation of the runner's backend BT and actions
      * @return bool If successful
      */
     bool on_activate()
@@ -172,7 +172,7 @@ public:
     }
 
     /**
-     * @brief Dectiation of the runner's backend BT and actions
+     * @brief Deactivation of the runner's backend BT and actions
      * @return bool If successful
      */
     bool on_deactivate()
@@ -205,7 +205,7 @@ public:
      * @brief Get the action name of this runner to expose
      * @return string Name of action to expose
      */
-    std::string getName() {return std::string("run_bt");}
+    std::string getName() {return std::string("run_tree");}
 
     std::string getDefaultBTFilepath(rclcpp_lifecycle::LifecycleNode::WeakPtr node);
 

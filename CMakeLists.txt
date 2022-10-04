@@ -29,15 +29,15 @@ include_directories(
   include
 )
 
-# set(runner_exe bt_runner)
-# add_executable(${runner_exe}
-#   src/main.cpp
-# )
-# set(runner_lib ${runner_exe}_core)
-# add_library(${runner_lib} SHARED
-#   src/bt_runner.cpp
-#   src/runner.cpp
-# )
+set(runner_exe bt_runner)
+add_executable(${runner_exe}
+  src/main.cpp
+)
+set(runner_lib ${runner_exe}_core)
+add_library(${runner_lib} SHARED
+  src/bt_runner.cpp
+  src/runner.cpp
+)
 
 set(dependencies
   rclcpp
@@ -49,13 +49,13 @@ set(dependencies
 )
 
 # Runner
-# ament_target_dependencies(${runner_exe}
-#   ${dependencies}
-# )
-# target_link_libraries(${runner_exe} ${runner_lib})
-# ament_target_dependencies(${runner_lib}
-#   ${dependencies}
-# )
+ament_target_dependencies(${runner_exe}
+  ${dependencies}
+)
+target_link_libraries(${runner_exe} ${runner_lib})
+ament_target_dependencies(${runner_lib}
+  ${dependencies}
+)
 
 # Plugins
 add_library(robot_arm_takeoff_action_bt_node SHARED plugins/action/arm_takeoff_action.cpp)
@@ -77,9 +77,9 @@ install(TARGETS ${plugin_libs}
   RUNTIME DESTINATION bin
 )
 
-# install(TARGETS ${runner_exe}
-#   RUNTIME DESTINATION lib/${PROJECT_NAME}
-# )
+install(TARGETS ${runner_exe}
+  RUNTIME DESTINATION lib/${PROJECT_NAME}
+)
 
 install(DIRECTORY include/
   DESTINATION include/
@@ -106,7 +106,7 @@ ament_export_include_directories(
 )
 ament_export_libraries(
   ${plugin_libs}
-  # ${runner_lib}
+  ${runner_lib}
 )
 ament_export_dependencies(${dependencies})
 ament_package()
