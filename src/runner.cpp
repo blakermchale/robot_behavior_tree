@@ -63,6 +63,13 @@ bool
 Runner::goalReceived(ActionT::Goal::ConstSharedPtr goal)
 {
   auto bt_xml_filename = goal->behavior_tree;
+  if (bt_xml_filename == "") {
+    std::string pkg_share_dir =
+      ament_index_cpp::get_package_share_directory("robot_behavior_tree");
+    bt_xml_filename = pkg_share_dir +
+      "/trees/test_actions.xml";
+  }
+  RCLCPP_INFO(logger_, "Received goal request: %s", bt_xml_filename.c_str());
 
   if (!bt_action_server_->loadBehaviorTree(bt_xml_filename)) {
     RCLCPP_ERROR(

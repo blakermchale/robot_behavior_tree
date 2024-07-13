@@ -7,10 +7,6 @@ Creates lifecycle node for running behavior trees.
 
 
 from launch_ros.actions import Node
-from launch import LaunchDescription
-from launch.actions import OpaqueFunction, DeclareLaunchArgument
-from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument
 from launch.conditions import IfCondition
 from launch.substitutions import LaunchConfiguration, PythonExpression
 
@@ -18,58 +14,39 @@ from ament_index_python.packages import get_package_share_directory
 
 import os
 
+from ros2_utils.launch_manager import LaunchManager
+
 
 # Get relative package directories
 robot_behavior_tree = get_package_share_directory("robot_behavior_tree")
 
 
-def generate_launch_description():   
-    launch_description = []
-    launch_description += get_launch_arguments()
-    launch_description += [OpaqueFunction(function = launch_setup)] 
-    return LaunchDescription(launch_description)
-
-
 DEFAULT_BT = os.path.join(robot_behavior_tree, "trees", "test_actions.xml")
-# Arguments with relevant info, type defaults to string
-LAUNCH_ARGS = [
-    {"name": "config_file",               "default": "",          "description": "Config file bt runner parameters"},
-    {"name": "default_bt_xml_filename",   "default": DEFAULT_BT,  "description": "Behavior tree xml file to load initially"},
-    {"name": "enable_groot_monitoring",   "default": "true",      "description": "Enable groot monitoring."},
-    {"name": "groot_zmq_publisher_port",  "default": "1666",      "description": "Groot publisher port."},
-    {"name": "groot_zmq_server_port",     "default": "1667",      "description": "Groot publisher port."},
-    {"name": "namespace",                 "default": "",          "description": "Namespace for ROS.",}
-]
-def get_launch_arguments():
-    return [DeclareLaunchArgument(param['name'], default_value=param['default'], description=param['description'], choices=param.get("choices")) for param in LAUNCH_ARGS]
 
 
-def set_configurable_parameters():
-    return dict([(param['name'], LaunchConfiguration(param['name'])) for param in LAUNCH_ARGS])
-
-
-def launch_setup(context, *args, **kwargs):
+def launch_setup(args):
     """Allows declaration of launch arguments within the ROS2 context
     """
+    lm = LaunchManager()
     # Change to trees folder for including subtrees since behavior trees xml parsing uses cwd
     os.chdir(os.path.dirname(DEFAULT_BT))
 
-    namespace = LaunchConfiguration("namespace").perform(context)
+    namespace = args.namespace
     lifecycle_nodes = ["bt_runner"]
-    ld = [
+    lm.add_action_list([
         Node(
             package='robot_behavior_tree', executable="bt_runner",
             condition=IfCondition(PythonExpression(["'", LaunchConfiguration('config_file'), "' == ''"])),
             output='screen',
             namespace=namespace,
-            parameters=[set_configurable_parameters()]),
+            parameters=[{'use_sim_time': True},
+                        {'default_server_timeout': 100}]),
         Node(
             package='robot_behavior_tree', executable="bt_runner", name="bt_runner",
             condition=IfCondition(PythonExpression(["'", LaunchConfiguration('config_file'), "' != ''"])),
             output='screen',
             namespace=namespace,
-            parameters=[set_configurable_parameters(),
-                        LaunchConfiguration("config_file")]),
+            parameters=[LaunchConfiguration("config_file")]),
         Node(
             package='nav2_lifecycle_manager',
             executable='lifecycle_manager',
@@ -79,10 +56,22 @@ def launch_setup(context, *args, **kwargs):
             parameters=[{'use_sim_time': False},
                         {'autostart': True},
                         {'node_names': lifecycle_nodes}]),
-    ]
-    return ld
+    ])
+    return lm.describe_sub_entities()
 
 
 def combine_names(l: list, sep: str):
     l = list(filter(None, l))  # Remove empty strings
     return sep.join(l)
+
+
+def generate_launch_description():
+    lm = LaunchManager()
+    lm.add_arg("config_file", "", "Path to yaml file that contains namespaces for a vehicle and their relevant launch args. See examples/ folder.")
+    lm.add_arg("default_run_bt_xml", DEFAULT_BT, "Behavior tree xml file to load initially.")
+    lm.add_arg("enable_groot_monitoring", True, "Enable Groot monitoring.")
+    lm.add_arg("groot_zmq_publisher_port", 1666, "Groot publisher port.")
+    lm.add_arg("groot_zmq_server_port", 1667, "Groot publisher port.")
+    lm.add_arg("namespace", "", "Namespace for ROS.")
+    lm.add_opaque_function(launch_setup)
+    return lm

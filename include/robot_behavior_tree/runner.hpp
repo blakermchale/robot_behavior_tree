@@ -100,200 +100,204 @@ protected:
 class Runner
 {
 public:
-    using ActionT = robot_control_interfaces::action::RunBT;
-    using Ptr = std::shared_ptr<robot_behavior_tree::Runner>;
+  using ActionT = robot_control_interfaces::action::RunBT;
+  using Ptr = std::shared_ptr<robot_behavior_tree::Runner>;
 
-    /**
-     * @brief A Runner constructor
-     */
-    Runner()
-    {
-        plugin_muxer_ = nullptr;
+  /**
+   * @brief A Runner constructor
+   */
+  Runner()
+  {
+      plugin_muxer_ = nullptr;
+  }
+
+  /**
+   * @brief Virtual destructor
+   */
+  virtual ~Runner() = default;
+
+  /**
+   * @brief Configuration to setup the runner's backend BT and actions
+   * @param parent_node The ROS parent node to utilize
+   * @param plugin_lib_names a vector of plugin shared libraries to load
+   * @param plugin_muxer The muxing object to ensure only one runner
+   * can be active at a time
+   * @return bool If successful
+   */
+  bool on_configure(
+    rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node,
+    const std::vector<std::string> & plugin_lib_names,
+    robot_behavior_tree::RunnerMuxer * plugin_muxer)
+  {
+    auto node = parent_node.lock();
+    logger_ = node->get_logger();
+    clock_ = node->get_clock();
+    plugin_muxer_ = plugin_muxer;
+
+    // get the default behavior tree for this runner
+    std::string default_bt_xml_filename = getDefaultBTFilepath(parent_node);
+
+    // Create the Behavior Tree Action Server for this runner
+    bt_action_server_ = std::make_unique<nav2_behavior_tree::BtActionServer<ActionT>>(
+      node,
+      getName(),
+      plugin_lib_names,
+      default_bt_xml_filename,
+      std::bind(&Runner::onGoalReceived, this, std::placeholders::_1),
+      std::bind(&Runner::onLoop, this),
+      std::bind(&Runner::onPreempt, this, std::placeholders::_1),
+      std::bind(&Runner::onCompletion, this, std::placeholders::_1));
+
+    bool ok = true;
+    if (!bt_action_server_->on_configure()) {
+      ok = false;
     }
 
-    /**
-     * @brief Virtual destructor
-     */
-    virtual ~Runner() = default;
+    return configure(parent_node) && ok;
+  }
 
-    /**
-     * @brief Configuration to setup the runner's backend BT and actions
-     * @param parent_node The ROS parent node to utilize
-     * @param plugin_lib_names a vector of plugin shared libraries to load
-     * @param plugin_muxer The muxing object to ensure only one runner
-     * can be active at a time
-     * @return bool If successful
-     */
-    bool on_configure(
-        rclcpp_lifecycle::LifecycleNode::WeakPtr parent_node,
-        const std::vector<std::string> & plugin_lib_names,
-        robot_behavior_tree::RunnerMuxer * plugin_muxer)
-    {
-        auto node = parent_node.lock();
-        logger_ = node->get_logger();
-        clock_ = node->get_clock();
-        plugin_muxer_ = plugin_muxer;
+  /**
+   * @brief Actiation of the runner's backend BT and actions
+   * @return bool If successful
+   */
+  bool on_activate()
+  {
+    bool ok = true;
 
-        // get the default behavior tree for this runner
-        std::string default_bt_xml_filename = getDefaultBTFilepath(parent_node);
-
-        // Create the Behavior Tree Action Server for this runner
-        bt_action_server_ = std::make_unique<nav2_behavior_tree::BtActionServer<ActionT>>(
-        node,
-        getName(),
-        plugin_lib_names,
-        default_bt_xml_filename,
-        std::bind(&Runner::onGoalReceived, this, std::placeholders::_1),
-        std::bind(&Runner::onLoop, this),
-        std::bind(&Runner::onPreempt, this, std::placeholders::_1),
-        std::bind(&Runner::onCompletion, this, std::placeholders::_1));
-
-        bool ok = true;
-        if (!bt_action_server_->on_configure()) {
-        ok = false;
-        }
-
-        return configure(parent_node) && ok;
+    if (!bt_action_server_->on_activate()) {
+      ok = false;
     }
 
-    /**
-     * @brief Actiation of the runner's backend BT and actions
-     * @return bool If successful
-     */
-    bool on_activate()
-    {
-        bool ok = true;
+    return activate() && ok;
+  }
 
-        if (!bt_action_server_->on_activate()) {
-        ok = false;
-        }
-
-        return activate() && ok;
+  /**
+   * @brief Dectiation of the runner's backend BT and actions
+   * @return bool If successful
+   */
+  bool on_deactivate()
+  {
+    bool ok = true;
+    if (!bt_action_server_->on_deactivate()) {
+      ok = false;
     }
 
-    /**
-     * @brief Dectiation of the runner's backend BT and actions
-     * @return bool If successful
-     */
-    bool on_deactivate()
-    {
-        bool ok = true;
-        if (!bt_action_server_->on_deactivate()) {
-        ok = false;
-        }
+    return deactivate() && ok;
+  }
 
-        return deactivate() && ok;
+  /**
+   * @brief Cleanup a runner
+   * @return bool If successful
+   */
+  bool on_cleanup()
+  {
+    bool ok = true;
+    if (!bt_action_server_->on_cleanup()) {
+      ok = false;
     }
 
-    /**
-     * @brief Cleanup a runner
-     * @return bool If successful
-     */
-    bool on_cleanup()
-    {
-        bool ok = true;
-        if (!bt_action_server_->on_cleanup()) {
-        ok = false;
-        }
+    bt_action_server_.reset();
 
-        bt_action_server_.reset();
+    return cleanup() && ok;
+  }
 
-        return cleanup() && ok;
-    }
+  /**
+   * @brief Get the action name of this runner to expose
+   * @return string Name of action to expose
+   */
+  std::string getName() {return std::string("run_bt");}
 
-    /**
-     * @brief Get the action name of this runner to expose
-     * @return string Name of action to expose
-     */
-    std::string getName() {return std::string("run_bt");}
-
-    std::string getDefaultBTFilepath(rclcpp_lifecycle::LifecycleNode::WeakPtr node);
+  std::string getDefaultBTFilepath(rclcpp_lifecycle::LifecycleNode::WeakPtr node);
 
 protected:
-    /**
-     * @brief An intermediate goal reception function to mux navigators.
-     */
-    bool onGoalReceived(typename ActionT::Goal::ConstSharedPtr goal)
-    {
-        if (plugin_muxer_->isRunning()) {
-        RCLCPP_ERROR(
-            logger_,
-            "Requested runner from %s while another runner is processing,"
-            " rejecting request.", getName().c_str());
-        return false;
-        }
-
-        plugin_muxer_->startRunning(getName());
-
-        return goalReceived(goal);
+  /**
+   * @brief An intermediate goal reception function to mux navigators.
+   */
+  bool onGoalReceived(typename ActionT::Goal::ConstSharedPtr goal)
+  {
+    if (plugin_muxer_->isRunning()) {
+      RCLCPP_ERROR(
+        logger_,
+        "Requested runner from %s while another runner is processing,"
+        " rejecting request.", getName().c_str());
+      return false;
     }
 
-    /**
-     * @brief An intermediate compution function to mux navigators
-     */
-    void onCompletion(typename ActionT::Result::SharedPtr result)
-    {
-        plugin_muxer_->stopRunning(getName());
-        goalCompleted(result);
+    bool goal_accepted = goalReceived(goal);
+
+    if (goal_accepted) {
+      plugin_muxer_->startRunning(getName());
     }
 
-    /**
-     * @brief A callback to be called when a new goal is received by the BT action server
-     * Can be used to check if goal is valid and put values on
-     * the blackboard which depend on the received goal
-     */
-    bool goalReceived(typename ActionT::Goal::ConstSharedPtr goal);
+    return goal_accepted;
+  }
 
-    /**
-     * @brief A callback that defines execution that happens on one iteration through the BT
-     * Can be used to publish action feedback
-     */
-    void onLoop();
+  /**
+   * @brief An intermediate compution function to mux navigators
+   */
+  void onCompletion(typename ActionT::Result::SharedPtr result)
+  {
+    plugin_muxer_->stopRunning(getName());
+    goalCompleted(result);
+  }
 
-    /**
-     * @brief A callback that is called when a preempt is requested
-     */
-    void onPreempt(typename ActionT::Goal::ConstSharedPtr goal);
+  /**
+   * @brief A callback to be called when a new goal is received by the BT action server
+   * Can be used to check if goal is valid and put values on
+   * the blackboard which depend on the received goal
+   */
+  bool goalReceived(typename ActionT::Goal::ConstSharedPtr goal);
 
-    /**
-     * @brief A callback that is called when a the action is completed, can fill in
-     * action result message or indicate that this action is done.
-     */
-    void goalCompleted(typename ActionT::Result::SharedPtr result);
+  /**
+   * @brief A callback that defines execution that happens on one iteration through the BT
+   * Can be used to publish action feedback
+   */
+  void onLoop();
 
-    /**
-     * @param Method to configure resources.
-     */
-    bool configure(rclcpp_lifecycle::LifecycleNode::WeakPtr /*node*/);
+  /**
+   * @brief A callback that is called when a preempt is requested
+   */
+  void onPreempt(typename ActionT::Goal::ConstSharedPtr goal);
 
-    /**
-     * @brief Method to cleanup resources.
-     */
-    bool cleanup();
+  /**
+   * @brief A callback that is called when a the action is completed, can fill in
+   * action result message or indicate that this action is done.
+   */
+  void goalCompleted(typename ActionT::Result::SharedPtr result);
 
-    /**
-     * @brief Method to active and any threads involved in execution.
-     */
-    virtual bool activate() {return true;}
+  /**
+   * @param Method to configure resources.
+   */
+  bool configure(rclcpp_lifecycle::LifecycleNode::WeakPtr /*node*/);
 
-    /**
-     * @brief Method to deactive and any threads involved in execution.
-     */
-    virtual bool deactivate() {return true;}
+  /**
+   * @brief Method to cleanup resources.
+   */
+  bool cleanup();
 
-    /**
-     * @brief Initialize run
-     */
-    void initializeRun();
+  /**
+   * @brief Method to active and any threads involved in execution.
+   */
+  virtual bool activate() {return true;}
 
-    rclcpp::Time start_time_;
+  /**
+   * @brief Method to deactive and any threads involved in execution.
+   */
+  virtual bool deactivate() {return true;}
 
-    rclcpp_action::Client<ActionT>::SharedPtr self_client_;
+  /**
+   * @brief Initialize run
+   */
+  void initializeRun();
 
-    std::unique_ptr<nav2_behavior_tree::BtActionServer<ActionT>> bt_action_server_;
-    rclcpp::Logger logger_{rclcpp::get_logger("Runner")};
-    rclcpp::Clock::SharedPtr clock_;
-    RunnerMuxer * plugin_muxer_;
+  rclcpp::Time start_time_;
+
+  rclcpp_action::Client<ActionT>::SharedPtr self_client_;
+
+  std::unique_ptr<nav2_behavior_tree::BtActionServer<ActionT>> bt_action_server_;
+  rclcpp::Logger logger_{rclcpp::get_logger("Runner")};
+  rclcpp::Clock::SharedPtr clock_;
+  RunnerMuxer * plugin_muxer_;
 };
 
 }  // namespace robot_behavior_tree

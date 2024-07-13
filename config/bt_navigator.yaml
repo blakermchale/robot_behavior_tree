@@ -1,6 +1,0 @@
-bt_runner:
-  ros__parameters:
-    use_sim_time: True
-    default_bt_xml_filename: "navigate_w_replanning_and_recovery.xml"
-    plugin_lib_names:
-    - robot_arm_takeoff_action_bt_node
