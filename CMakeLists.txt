@@ -15,15 +15,8 @@ if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
 endif()
 
-# find dependencies
-find_package(ament_cmake REQUIRED)
-# uncomment the following section in order to fill in
-# further dependencies manually.
-# find_package(<dependency> REQUIRED)
-find_package(nav2_behavior_tree REQUIRED)
-find_package(nav2_util REQUIRED)
-find_package(nav2_bt_navigator REQUIRED)
-find_package(robot_control_interfaces REQUIRED)
+find_package(ament_cmake_auto REQUIRED)
+ament_auto_find_build_dependencies()
 
 include_directories(
   include
@@ -31,33 +24,17 @@ include_directories(
 
 set(library_name ${PROJECT_NAME})
 
-set(runner_exe bt_runner)
-add_executable(${runner_exe}
-  src/main.cpp
-)
-set(runner_lib ${runner_exe}_core)
-add_library(${runner_lib} SHARED
-  src/bt_runner.cpp
-  src/runner.cpp
-)
-
 set(dependencies
   rclcpp
   robot_control_interfaces
-  behaviortree_cpp_v3
-  nav2_behavior_tree
-  nav2_util
-  nav2_bt_navigator
+  behaviortree_cpp
+  behaviortree_ros2
 )
 
-# Runner
-ament_target_dependencies(${runner_exe}
-  ${dependencies}
-)
-target_link_libraries(${runner_exe} ${runner_lib})
-ament_target_dependencies(${runner_lib}
-  ${dependencies}
-)
+######################################################
+# Simple example showing how to use and customize the BtExecutionServer
+add_executable(bt_runner src/bt_runner.cpp)
+ament_target_dependencies(bt_runner ${dependencies})
 
 # Plugins
 add_library(robot_arm_takeoff_action_bt_node SHARED plugins/action/arm_takeoff_action.cpp)
@@ -72,15 +49,10 @@ foreach(bt_plugin ${plugin_libs})
   target_compile_definitions(${bt_plugin} PRIVATE BT_PLUGIN_EXPORT)
 endforeach()
 
-install(TARGETS ${runner_lib}
-                ${plugin_libs}
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  RUNTIME DESTINATION bin
-)
-
-install(TARGETS ${runner_exe}
-  RUNTIME DESTINATION lib/${PROJECT_NAME}
+install(TARGETS ${plugin_libs}
+  ARCHIVE DESTINATION share/${PROJECT_NAME}/plugins
+  LIBRARY DESTINATION share/${PROJECT_NAME}/plugins
+  RUNTIME DESTINATION share/${PROJECT_NAME}/plugins
 )
 
 install(DIRECTORY include/
@@ -108,7 +80,6 @@ ament_export_include_directories(
 )
 ament_export_libraries(
   ${plugin_libs}
-  ${runner_lib}
 )
 ament_export_dependencies(${dependencies})
 ament_package()

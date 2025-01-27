@@ -1,10 +1,10 @@
-<root main_tree_to_execute="MainTree">
+<root main_tree_to_execute="MainTree" BTCPP_format="4">
     <include path="square.xml"/>
     <BehaviorTree ID="MainTree">
-        <SequenceStar name="test">
+        <Sequence name="test">
             <ArmTakeoff altitude="2.0"/>
-            <SubTree ID="Square" __shared_blackboard="true"/>
+            <SubTree ID="Square"/>
             <Land/>
-        </SequenceStar>
+        </Sequence>
     </BehaviorTree>
 </root>

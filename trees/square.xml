@@ -1,17 +1,17 @@
-<root main_tree_to_execute = "MainSquare" >
+<root main_tree_to_execute = "MainSquare" BTCPP_format="4"  >
     <BehaviorTree ID="MainSquare">
-        <SequenceStar>
+        <Sequence>
             <ArmTakeoff altitude="1.5"/>
             <SubTree ID="Square"/>
             <Land/>
-        </SequenceStar>
+        </Sequence>
     </BehaviorTree>
     <BehaviorTree ID="Square">
-        <SequenceStar>
+        <Sequence>
             <GoWaypoint name="Top Left" frame="1" x="4.0" y="0.0" z="-1.5" heading="0.0"/>
             <GoWaypoint name="Top Right" frame="1" x="4.0" y="4.0" z="-3.0" heading="0.0"/>
             <GoWaypoint name="Bottom Right" frame="1" x="0.0" y="4.0" z="-3.0" heading="0.0"/>
             <GoWaypoint name="Bottom Left" frame="1" x="0.0" y="0.0" z="-1.5" heading="0.0"/>
-        </SequenceStar>
+        </Sequence>
     </BehaviorTree>
  </root>

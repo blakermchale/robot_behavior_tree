@@ -4,44 +4,39 @@
 #include <string>
 
 #include "robot_control_interfaces/action/arm_takeoff.hpp"
-#include "nav2_behavior_tree/bt_action_node.hpp"
+
+#include "behaviortree_ros2/bt_action_node.hpp"
 
 namespace robot_behavior_tree
 {
 
-/**
- * @brief A nav2_behavior_tree::BtActionNode class that wraps robot_control_interfaces::action::ArmTakeoff
- */
-class ArmTakeoffAction : public nav2_behavior_tree::BtActionNode<robot_control_interfaces::action::ArmTakeoff>
+using namespace BT;
+
+class ArmTakeoffAction : public RosActionNode<robot_control_interfaces::action::ArmTakeoff>
 {
 public:
-  /**
-   * @brief A constructor for robot_behavior_tree::ArmTakeoffAction
-   * @param xml_tag_name Name for the XML tag for this node
-   * @param action_name Action name this node creates a client for
-   * @param conf BT node configuration
-   */
-  ArmTakeoffAction(
-    const std::string & xml_tag_name,
-    const std::string & action_name,
-    const BT::NodeConfiguration & conf);
+  ArmTakeoffAction(const std::string& name, const NodeConfig& conf,
+              const RosNodeParams& params)
+    : RosActionNode<robot_control_interfaces::action::ArmTakeoff>(name, conf, params)
+  {}
 
-  /**
-   * @brief Function to perform some user-defined operation on tick
-   */
-  void on_tick() override;
-
-  /**
-   * @brief Creates list of BT ports
-   * @return BT::PortsList Containing basic ports along with node-specific ports
-   */
   static BT::PortsList providedPorts()
   {
-    return providedBasicPorts(
-      {
-        BT::InputPort<double>("altitude", 2.0, "Takeoff altitude"),
-      });
+    PortsList basic = providedBasicPorts({
+      InputPort<double>("altitude", "Takeoff altitude."),
+    });
+    auto name_port = InputPort<std::string>("action_name", "arm_takeoff", "Action server name");
+    basic["action_name"] = name_port.second;
+    return basic;
   }
+
+  bool setGoal(Goal& goal) override;
+
+  void onHalt() override;
+
+  BT::NodeStatus onResultReceived(const WrappedResult& wr) override;
+
+  virtual BT::NodeStatus onFailure(ActionNodeErrorCode error) override;
 };
 
 }  // namespace robot_behavior_tree

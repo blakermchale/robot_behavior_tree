@@ -2,35 +2,32 @@
 #include <string>
 
 #include "robot_behavior_tree/plugins/action/land_action.hpp"
+#include "behaviortree_ros2/plugins.hpp"
 
 namespace robot_behavior_tree
 {
 
-LandAction::LandAction(
-  const std::string & xml_tag_name,
-  const std::string & action_name,
-  const BT::NodeConfiguration & conf)
-: BtActionNode<robot_control_interfaces::action::Land>(xml_tag_name, action_name, conf)
+bool LandAction::setGoal(RosActionNode::Goal& goal)
 {
+  return true;
 }
 
-void LandAction::on_tick()
+NodeStatus LandAction::onResultReceived(const RosActionNode::WrappedResult& wr)
 {
+  return NodeStatus::SUCCESS;
+}
 
+NodeStatus LandAction::onFailure(ActionNodeErrorCode error)
+{
+  RCLCPP_ERROR(logger(), "%s: onFailure with error: %s", name().c_str(), toStr(error));
+  return NodeStatus::FAILURE;
+}
+
+void LandAction::onHalt()
+{
+  RCLCPP_INFO(logger(), "%s: onHalt", name().c_str());
 }
 
 }  // namespace robot_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
-BT_REGISTER_NODES(factory)
-{
-  BT::NodeBuilder builder =
-    [](const std::string & name, const BT::NodeConfiguration & config)
-    {
-      return std::make_unique<robot_behavior_tree::LandAction>(
-        name, "land", config);
-    };
-
-  factory.registerBuilder<robot_behavior_tree::LandAction>(
-    "Land", builder);
-}
+CreateRosNodePlugin(robot_behavior_tree::LandAction, "Land");

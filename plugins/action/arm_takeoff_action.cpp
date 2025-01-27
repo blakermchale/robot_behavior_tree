@@ -2,35 +2,35 @@
 #include <string>
 
 #include "robot_behavior_tree/plugins/action/arm_takeoff_action.hpp"
+#include "behaviortree_ros2/plugins.hpp"
+
 
 namespace robot_behavior_tree
 {
 
-ArmTakeoffAction::ArmTakeoffAction(
-  const std::string & xml_tag_name,
-  const std::string & action_name,
-  const BT::NodeConfiguration & conf)
-: BtActionNode<robot_control_interfaces::action::ArmTakeoff>(xml_tag_name, action_name, conf)
+bool ArmTakeoffAction::setGoal(RosActionNode::Goal& goal)
 {
+  auto altitude = getInput<double>("altitude");
+  goal.altitude = altitude.value();
+  return true;
 }
 
-void ArmTakeoffAction::on_tick()
+NodeStatus ArmTakeoffAction::onResultReceived(const RosActionNode::WrappedResult& wr)
 {
-  getInput("altitude", goal_.altitude);
+  return NodeStatus::SUCCESS;
+}
+
+NodeStatus ArmTakeoffAction::onFailure(ActionNodeErrorCode error)
+{
+  RCLCPP_ERROR(logger(), "%s: onFailure with error: %s", name().c_str(), toStr(error));
+  return NodeStatus::FAILURE;
+}
+
+void ArmTakeoffAction::onHalt()
+{
+  RCLCPP_INFO(logger(), "%s: onHalt", name().c_str());
 }
 
 }  // namespace robot_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
-BT_REGISTER_NODES(factory)
-{
-  BT::NodeBuilder builder =
-    [](const std::string & name, const BT::NodeConfiguration & config)
-    {
-      return std::make_unique<robot_behavior_tree::ArmTakeoffAction>(
-        name, "arm_takeoff", config);
-    };
-
-  factory.registerBuilder<robot_behavior_tree::ArmTakeoffAction>(
-    "ArmTakeoff", builder);
-}
+CreateRosNodePlugin(robot_behavior_tree::ArmTakeoffAction, "ArmTakeoff");

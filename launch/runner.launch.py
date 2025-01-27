@@ -22,6 +22,7 @@ robot_behavior_tree = get_package_share_directory("robot_behavior_tree")
 
 
 DEFAULT_BT = os.path.join(robot_behavior_tree, "trees", "test_actions.xml")
+DEFAULT_CONFIG = os.path.join(robot_behavior_tree, "config", "bt_runner.yaml")
 
 
 def launch_setup(args):
@@ -32,30 +33,21 @@ def launch_setup(args):
     os.chdir(os.path.dirname(DEFAULT_BT))
 
     namespace = args.namespace
-    lifecycle_nodes = ["bt_runner"]
     lm.add_action_list([
-        Node(
-            package='robot_behavior_tree', executable="bt_runner",
-            condition=IfCondition(PythonExpression(["'", LaunchConfiguration('config_file'), "' == ''"])),
-            output='screen',
-            namespace=namespace,
-            parameters=[{'use_sim_time': True},
-                        {'default_server_timeout': 100}]),
+        # Node(
+        #     package='robot_behavior_tree', executable="bt_runner",
+        #     condition=IfCondition(PythonExpression(["'", LaunchConfiguration('config_file'), "' == ''"])),
+        #     output='screen',
+        #     namespace=namespace,
+        #     parameters=[{'use_sim_time': True},
+        #                 {'default_server_timeout': 100},
+        #                 {'error_code_names': ['']}]),
         Node(
             package='robot_behavior_tree', executable="bt_runner", name="bt_runner",
-            condition=IfCondition(PythonExpression(["'", LaunchConfiguration('config_file'), "' != ''"])),
+            # condition=IfCondition(PythonExpression(["'", LaunchConfiguration('config_file'), "' != ''"])),
             output='screen',
             namespace=namespace,
             parameters=[LaunchConfiguration("config_file")]),
-        Node(
-            package='nav2_lifecycle_manager',
-            executable='lifecycle_manager',
-            name='lifecycle_manager_navigation',
-            output='screen',
-            namespace=namespace,
-            parameters=[{'use_sim_time': False},
-                        {'autostart': True},
-                        {'node_names': lifecycle_nodes}]),
     ])
     return lm.describe_sub_entities()
 
@@ -67,7 +59,7 @@ def combine_names(l: list, sep: str):
 
 def generate_launch_description():
     lm = LaunchManager()
-    lm.add_arg("config_file", "", "Path to yaml file that contains namespaces for a vehicle and their relevant launch args. See examples/ folder.")
+    lm.add_arg("config_file", DEFAULT_CONFIG, "Path to yaml file that contains namespaces for a vehicle and their relevant launch args. See examples/ folder.")
     lm.add_arg("default_run_bt_xml", DEFAULT_BT, "Behavior tree xml file to load initially.")
     lm.add_arg("enable_groot_monitoring", True, "Enable Groot monitoring.")
     lm.add_arg("groot_zmq_publisher_port", 1666, "Groot publisher port.")

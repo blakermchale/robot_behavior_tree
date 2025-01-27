@@ -2,39 +2,40 @@
 #include <string>
 
 #include "robot_behavior_tree/plugins/action/go_waypoint_action.hpp"
+#include "behaviortree_ros2/plugins.hpp"
+
 
 namespace robot_behavior_tree
 {
 
-GoWaypointAction::GoWaypointAction(
-  const std::string & xml_tag_name,
-  const std::string & action_name,
-  const BT::NodeConfiguration & conf)
-: BtActionNode<robot_control_interfaces::action::GoWaypoint>(xml_tag_name, action_name, conf)
+bool GoWaypointAction::setGoal(RosActionNode::Goal& goal)
 {
+  // auto altitude = getInput<double>("altitude");
+  // goal.altitude = altitude.value();
+  getInput("frame", goal.waypoint.frame);
+  getInput("x", goal.waypoint.position.x);
+  getInput("y", goal.waypoint.position.y);
+  getInput("z", goal.waypoint.position.z);
+  getInput("heading", goal.waypoint.heading);
+  return true;
 }
 
-void GoWaypointAction::on_tick()
+NodeStatus GoWaypointAction::onResultReceived(const RosActionNode::WrappedResult& wr)
 {
-  getInput("frame", goal_.waypoint.frame);
-  getInput("x", goal_.waypoint.position.x);
-  getInput("y", goal_.waypoint.position.y);
-  getInput("z", goal_.waypoint.position.z);
-  getInput("heading", goal_.waypoint.heading);
+  return NodeStatus::SUCCESS;
+}
+
+NodeStatus GoWaypointAction::onFailure(ActionNodeErrorCode error)
+{
+  RCLCPP_ERROR(logger(), "%s: onFailure with error: %s", name().c_str(), toStr(error));
+  return NodeStatus::FAILURE;
+}
+
+void GoWaypointAction::onHalt()
+{
+  RCLCPP_INFO(logger(), "%s: onHalt", name().c_str());
 }
 
 }  // namespace robot_behavior_tree
 
-#include "behaviortree_cpp_v3/bt_factory.h"
-BT_REGISTER_NODES(factory)
-{
-  BT::NodeBuilder builder =
-    [](const std::string & name, const BT::NodeConfiguration & config)
-    {
-      return std::make_unique<robot_behavior_tree::GoWaypointAction>(
-        name, "go_waypoint", config);
-    };
-
-  factory.registerBuilder<robot_behavior_tree::GoWaypointAction>(
-    "GoWaypoint", builder);
-}
+CreateRosNodePlugin(robot_behavior_tree::GoWaypointAction, "GoWaypoint");
