@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.10)
 project(robot_behavior_tree)
 
 # Default to C99
@@ -31,8 +31,6 @@ set(dependencies
   behaviortree_ros2
 )
 
-######################################################
-# Simple example showing how to use and customize the BtExecutionServer
 add_executable(bt_runner src/bt_runner.cpp)
 ament_target_dependencies(bt_runner ${dependencies})
 
@@ -48,6 +46,11 @@ foreach(bt_plugin ${plugin_libs})
   ament_target_dependencies(${bt_plugin} ${dependencies})
   target_compile_definitions(${bt_plugin} PRIVATE BT_PLUGIN_EXPORT)
 endforeach()
+
+install(TARGETS
+  bt_runner
+  DESTINATION lib/${PROJECT_NAME}
+)
 
 install(TARGETS ${plugin_libs}
   ARCHIVE DESTINATION share/${PROJECT_NAME}/plugins
